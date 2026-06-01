@@ -15,6 +15,10 @@ extern "C" {
 /* Render autolinks with class name  */
 #define CMARK_OPT_AUTOLINK_CLASS_NAME (1 << 27)
 
+/* Use CJK-friendly emphasis rules.
+ * See https://github.com/tats-u/markdown-cjk-friendly */
+#define CMARK_OPT_CJK_FRIENDLY_EMPHASIS (1 << 28)
+
 #ifdef __cplusplus
 }
 #endif

@@ -16,6 +16,7 @@ module QiitaMarker
         STRIKETHROUGH_DOUBLE_TILDE: (1 << 14),
         MENTION_NO_EMPHASIS: (1 << 26),
         AUTOLINK_CLASS_NAME: (1 << 27),
+        CJK_FRIENDLY_EMPHASIS: (1 << 28),
       }.freeze,
       render: {
         DEFAULT: 0,
@@ -34,6 +35,7 @@ module QiitaMarker
         CODE_DATA_METADATA: (1 << 25),
         MENTION_NO_EMPHASIS: (1 << 26),
         AUTOLINK_CLASS_NAME: (1 << 27),
+        CJK_FRIENDLY_EMPHASIS: (1 << 28),
       }.freeze,
       format: [:html, :xml, :commonmark, :plaintext].freeze,
     }.freeze

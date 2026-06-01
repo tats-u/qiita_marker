@@ -414,7 +414,8 @@ static cmark_node *handle_backticks(subject *subj, int options) {
 // Scan ***, **, or * and return number scanned, or 0.
 // Advances position.
 static int scan_delims(subject *subj, unsigned char c, bool *can_open,
-                       bool *can_close, bool mention_no_emphasis) {
+                       bool *can_close, bool mention_no_emphasis,
+                       bool cjk_friendly_emphasis) {
   int numdelims = 0;
   bufsize_t before_char_pos, after_char_pos;
   int32_t after_char = 0;
@@ -473,11 +474,18 @@ static int scan_delims(subject *subj, unsigned char c, bool *can_open,
   left_flanking = numdelims > 0 && !cmark_utf8proc_is_space(after_char) &&
                   (!cmark_utf8proc_is_punctuation(after_char) ||
                    cmark_utf8proc_is_space(before_char) ||
-                   cmark_utf8proc_is_punctuation(before_char));
+                   cmark_utf8proc_is_punctuation(before_char) ||
+                   (cjk_friendly_emphasis &&
+                    (cmark_utf8proc_is_cjk(after_char) ||
+                     cmark_utf8proc_is_cjk(before_char) ||
+                     cmark_utf8proc_is_ideographic_vs(before_char))));
   right_flanking = numdelims > 0 && !cmark_utf8proc_is_space(before_char) &&
                    (!cmark_utf8proc_is_punctuation(before_char) ||
                     cmark_utf8proc_is_space(after_char) ||
-                    cmark_utf8proc_is_punctuation(after_char));
+                    cmark_utf8proc_is_punctuation(after_char) ||
+                    (cjk_friendly_emphasis &&
+                     (cmark_utf8proc_is_cjk(before_char) ||
+                      cmark_utf8proc_is_cjk(after_char))));
   if (c == '_') {
     *can_open = left_flanking &&
                 (!right_flanking || cmark_utf8proc_is_punctuation(before_char));
@@ -577,13 +585,15 @@ static void push_bracket(subject *subj, bool image, cmark_node *inl_text) {
 
 // Assumes the subject has a c at the current position.
 static cmark_node *handle_delim(subject *subj, unsigned char c, bool smart,
-                                bool mention_no_emphasis) {
+                                bool mention_no_emphasis,
+                                bool cjk_friendly_emphasis) {
   bufsize_t numdelims;
   cmark_node *inl_text;
   bool can_open, can_close;
   cmark_chunk contents;
 
-  numdelims = scan_delims(subj, c, &can_open, &can_close, mention_no_emphasis);
+  numdelims = scan_delims(subj, c, &can_open, &can_close, mention_no_emphasis,
+                          cjk_friendly_emphasis);
 
   if (c == '\'' && smart) {
     contents = cmark_chunk_literal(RIGHTSINGLEQUOTE);
@@ -1491,7 +1501,8 @@ static int parse_inline(cmark_parser *parser, subject *subj, cmark_node *parent,
   case '\'':
   case '"':
     new_inl = handle_delim(subj, c, (options & CMARK_OPT_SMART) != 0,
-                           (options & CMARK_OPT_MENTION_NO_EMPHASIS) != 0);
+                           (options & CMARK_OPT_MENTION_NO_EMPHASIS) != 0,
+                           (options & CMARK_OPT_CJK_FRIENDLY_EMPHASIS) != 0);
     break;
   case '-':
     new_inl = handle_hyphen(subj, (options & CMARK_OPT_SMART) != 0);
