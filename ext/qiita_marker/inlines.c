@@ -422,7 +422,7 @@ static int scan_delims(subject *subj, unsigned char c, bool *can_open,
   bufsize_t before_char_pos, after_char_pos;
   int32_t after_char = 0;
   int32_t before_char = 0;
-  int32_t before_before_char = 0;
+  int32_t before_before_char = 10;
   int len;
   bool left_flanking, right_flanking;
   bufsize_t before_before_char_pos;
@@ -1763,11 +1763,12 @@ int cmark_inline_parser_scan_delimiters(cmark_inline_parser *parser,
   bufsize_t before_char_pos, after_char_pos;
   int32_t after_char = 0;
   int32_t before_char = 0;
-  int32_t before_before_char = 0;
+  int32_t before_before_char = 10;
   int len;
   bool space_before, space_after;
   bufsize_t before_before_char_pos;
   bool cjk = parser->cjk_friendly_emphasis;
+  bool punct_before_value, punct_after_value;
 
   if (parser->pos == 0) {
     before_char = 10;
@@ -1841,29 +1842,31 @@ int cmark_inline_parser_scan_delimiters(cmark_inline_parser *parser,
     }
   }
 
-  *punct_before = cmark_utf8proc_is_punctuation(before_char);
-  *punct_after = cmark_utf8proc_is_punctuation(after_char);
+  punct_before_value = cmark_utf8proc_is_punctuation(before_char);
+  punct_after_value = cmark_utf8proc_is_punctuation(after_char);
+  *punct_before = punct_before_value;
+  *punct_after = punct_after_value;
 
   if (cjk) {
     *left_flanking = numdelims > 0 && !cmark_utf8proc_is_space(after_char) &&
-                     (!(*punct_after && !cmark_utf8proc_is_cjk(after_char)) ||
+                     (!(punct_after_value && !cmark_utf8proc_is_cjk(after_char)) ||
                       cmark_utf8proc_is_space(before_char) ||
-                      (*punct_before && !cmark_utf8proc_is_cjk(before_char)) ||
+                      (punct_before_value && !cmark_utf8proc_is_cjk(before_char)) ||
                       cmark_utf8proc_is_cjk(before_char) ||
                       cmark_utf8proc_is_ideographic_vs(before_char) ||
                       (cmark_utf8proc_is_non_emoji_general_purpose_vs(before_char) &&
                        (cmark_utf8proc_is_cjk(before_before_char) ||
-                        (*punct_before &&
+                        (punct_before_value &&
                          !cmark_utf8proc_is_cjk(before_before_char)))));
 
     *right_flanking = numdelims > 0 && !cmark_utf8proc_is_space(before_char) &&
-                      (!((*punct_before &&
+                      (!((punct_before_value &&
                           !cmark_utf8proc_is_cjk(before_char)) ||
                          (cmark_utf8proc_is_non_emoji_general_purpose_vs(before_char) &&
                           cmark_utf8proc_is_punctuation(before_before_char) &&
                           !cmark_utf8proc_is_cjk(before_before_char))) ||
                        cmark_utf8proc_is_space(after_char) ||
-                       (*punct_after && !cmark_utf8proc_is_cjk(after_char)) ||
+                       (punct_after_value && !cmark_utf8proc_is_cjk(after_char)) ||
                        cmark_utf8proc_is_cjk(after_char));
   } else {
     space_before = cmark_utf8proc_is_space(before_char) != 0;
