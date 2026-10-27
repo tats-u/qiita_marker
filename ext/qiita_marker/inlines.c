@@ -413,6 +413,12 @@ static cmark_node *handle_backticks(subject *subj, int options) {
   }
 }
 
+// Unicode 18 fullwidth forms of ambiguous quotation marks, selected by VS2.
+static bool is_cjk_ambiguous_punctuation_sequence(int32_t base, int32_t selector) {
+  return selector == 0xFE01 &&
+         (base == 0x2018 || base == 0x2019 || base == 0x201C || base == 0x201D);
+}
+
 // Scan ***, **, or * and return number scanned, or 0.
 // Advances position.
 static int scan_delims(subject *subj, unsigned char c, bool *can_open,
@@ -509,7 +515,8 @@ static int scan_delims(subject *subj, unsigned char c, bool *can_open,
     right_flanking = numdelims > 0 && !cmark_utf8proc_is_space(before_char) &&
                      (!(cmark_utf8proc_is_non_cjk_punctuation_character(before_char) ||
                         (cmark_utf8proc_is_non_emoji_general_use_variation_selector(before_char) &&
-                         cmark_utf8proc_is_non_cjk_punctuation_character(before_before_char))) ||
+                         cmark_utf8proc_is_non_cjk_punctuation_character(before_before_char) &&
+                         !is_cjk_ambiguous_punctuation_sequence(before_before_char, before_char))) ||
                       cmark_utf8proc_is_space(after_char) ||
                       cmark_utf8proc_is_non_cjk_punctuation_character(after_char) ||
                       cmark_utf8proc_is_cjk_character(after_char));
@@ -1858,7 +1865,8 @@ int cmark_inline_parser_scan_delimiters(cmark_inline_parser *parser,
     *right_flanking = numdelims > 0 && !cmark_utf8proc_is_space(before_char) &&
                      (!(cmark_utf8proc_is_non_cjk_punctuation_character(before_char) ||
                         (cmark_utf8proc_is_non_emoji_general_use_variation_selector(before_char) &&
-                         cmark_utf8proc_is_non_cjk_punctuation_character(before_before_char))) ||
+                         cmark_utf8proc_is_non_cjk_punctuation_character(before_before_char) &&
+                         !is_cjk_ambiguous_punctuation_sequence(before_before_char, before_char))) ||
                       cmark_utf8proc_is_space(after_char) ||
                       cmark_utf8proc_is_non_cjk_punctuation_character(after_char) ||
                       cmark_utf8proc_is_cjk_character(after_char));
